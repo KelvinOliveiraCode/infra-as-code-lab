@@ -1,0 +1,60 @@
+# Acessos do laboratorio ficticio.
+#
+# Este arquivo e o unico lugar onde se responde "quem chega onde". Ele cruza
+# servidor, grupo e permissao, e existe separado dos outros dois porque a
+# pergunta tem dono diferente: rede responde "o pacote chega", servidores
+# responde "o processo roda", e acesso responde "esta pessoa pode".
+#
+# Se a regra estivesse dentro de servidores.yaml, mudar um acesso pareceria
+# mudanca de servidor. Nao e. Mudanca de acesso e mudanca de acesso, e no diff
+# precisa aparecer como tal.
+
+acessos:
+  - servidor: SRV-APP-01
+    grupo: developers
+    permissao: leitura
+    caminho: /var/log/app
+    motivo: DEVELOPERS le log para diagnosticar sem acesso aos dados
+
+  - servidor: SRV-APP-01
+    grupo: deploy
+    permissao: escrita
+    caminho: /srv/app/releases
+    motivo: DEPLOY publica a versao nova
+
+  - servidor: SRV-APP-01
+    grupo: readonly
+    permissao: leitura
+    caminho: /srv/app/config
+    motivo: READONLY ve a configuracao Effective e nenhuma alteracao
+
+  - servidor: SRV-APP-01
+    grupo: developers
+    permissao: leitura
+    caminho: /srv/app/config
+    motivo: DEVELOPERS precisa ler a config para rodar em debug
+
+  - servidor: SRV-BANCO-01
+    grupo: app
+    permissao: leitura
+    caminho: /var/lib/banco
+    motivo: APP le o banco, mas nao escreve nele
+
+  - servidor: SRV-BANCO-01
+    grupo: backup
+    permissao: escrita
+    caminho: /backup
+    motivo: BACKUP escreve o dump diario
+
+  - servidor: SRV-BANCO-01
+    grupo: app
+    permissao: escrita
+    caminho: /backup
+    motivo: APP grava o WAL antes de um dump parcial
+
+# Grupos com acesso administrativo estao declarados aqui tambem, para que a
+# lista de quem administra o laboratorio seja uma leitura e nao uma busca em
+# tres arquivos.
+administradores:
+  - bruno
+  - svcbackup

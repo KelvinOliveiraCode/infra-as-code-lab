@@ -1,0 +1,315 @@
+# Exemplo de plano do iaclab.
+#
+# Este arquivo e GERADO por tools/gerar_exemplo.py. Nao editar a mao.
+#
+# A saida e deterministica de proposito: nao ha timestamp em nenhum
+# lugar, para que o `git diff --exit-code` do CI possa conferir se o
+# exemplo ainda corresponde ao que o codigo faz.
+#
+# Comando correspondente ao bloco abaixo:
+#
+#   python -m iaclab plano --infra infra/rede.yaml \
+#       --infra infra/servidores.yaml --infra infra/acessos.yaml
+
+========================================================================
+1) PLANO INICIAL - antes de gerar qualquer arquivo
+========================================================================
+
+Todo equipamento acusa diferenca, porque nenhum arquivo foi gerado
+ainda. E o estado esperado de um repositorio novo: nao ha contra o que
+comparar.
+
+[codigo de saida: 1]
+modo: dry-run (nada e escrito em equipamento nenhum)
+equipamentos: 7
+data de referencia: 2026-01-15 14:00
+
+DIFFS:
+
+switch:SW-LAB-01: drift manual, 39 adicionada(s), 0 removida(s)
+--- switch:SW-LAB-01 (atual)
++++ switch:SW-LAB-01 (desejado)
+@@ -0,0 +1,39 @@
++hostname SW-LAB-01
++! modelo CAT-2960X-FICT
++interface Vlan30
++ description 30
++ exit
++! portas
++interface Gi0/1
++ description estacao da recepcao
++ switchport mode access
++ switchport access vlan 10
++ ! VLAN 10 CORPORATIVO
++ exit
++interface Gi0/2
++ description estacao da recepcao
++ switchport mode access
++ switchport access vlan 10
++ ! VLAN 10 CORPORATIVO
++ exit
++interface Gi0/3
++ description uplink para o FW-LAB-01
++ switchport mode trunk
++ switchport trunk allowed vlan 10, 20, 30
++ switchport trunk native vlan 30
++ exit
++interface Gi0/4
++ description ponto de acesso do visitante
++ switchport mode access
++ switchport access vlan 40
++ ! VLAN 40 VISITANTES
++ exit
++! spanning-tree
++ spanning-tree mode rapid-pvst
++ spanning-tree vlan 1-4094 priority 32768
++ spanning-tree portfast Gi0/1
++ spanning-tree portfast Gi0/2
++ spanning-tree portfast Gi0/4
++ spanning-tree bpduguard enable Gi0/1
++ spanning-tree bpduguard enable Gi0/2
++ spanning-tree bpduguard enable Gi0/4
+
+switch:SW-LAB-02: drift manual, 31 adicionada(s), 0 removida(s)
+--- switch:SW-LAB-02 (atual)
++++ switch:SW-LAB-02 (desejado)
+@@ -0,0 +1,31 @@
++hostname SW-LAB-02
++! modelo CAT-2960X-FICT
++interface Vlan30
++ description 30
++ exit
++! portas
++interface Gi0/1
++ description rack de servidores
++ switchport mode access
++ switchport access vlan 20
++ ! VLAN 20 SERVIDORES
++ exit
++interface Gi0/2
++ description rack de servidores
++ switchport mode access
++ switchport access vlan 20
++ ! VLAN 20 SERVIDORES
++ exit
++interface Gi0/3
++ description uplink para o SW-LAB-01
++ switchport mode trunk
++ switchport trunk allowed vlan 10, 20, 30
++ switchport trunk native vlan 30
++ exit
++! spanning-tree
++ spanning-tree mode rapid-pvst
++ spanning-tree vlan 1-4094 priority 36864
++ spanning-tree portfast Gi0/1
++ spanning-tree portfast Gi0/2
++ spanning-tree bpduguard enable Gi0/1
++ spanning-tree bpduguard enable Gi0/2
+
+firewall:FW-LAB-01: drift manual, 33 adicionada(s), 0 removida(s)
+--- firewall:FW-LAB-01 (atual)
++++ firewall:FW-LAB-01 (desejado)
+@@ -0,0 +1,33 @@
++hostname FW-LAB-01
++! modelo PF-FICT-200
++! zonas
++firewall-zone name TRUST
++ interface Gi0/1
++ ! VLAN 10 CORPORATIVO
++ exit
++firewall-zone name SERVIDORES
++ interface Gi0/2
++ ! VLAN 20 SERVIDORES
++ exit
++firewall-zone name UNTRUST
++ interface Gi0/3
++ ! VLAN 40 VISITANTES
++ exit
++firewall-zone name GESTAO
++ interface Gi0/4
++ ! VLAN 30 GESTAO
++ exit
++! regras
++firewall-rule from GESTAO to SERVIDORES action permitir port 443
++ description administracao https dos servidores
++firewall-rule from TRUST to SERVIDORES action permitir port 5432
++ description acesso ao banco pelas aplicacoes
++firewall-rule from UNTRUST to TRUST action negar port 0
++ description visitantes nao talkam com estacoes
++! nat
++nat rule SAIDA-VISITANTES
++ type dinamica
++ source-zone UNTRUST
++ destination-interface Gi0/3
++ description saida dos visitantes para a internet ficticia
++ exit
+
+ap:AP-LAB-01: drift manual, 13 adicionada(s), 0 removida(s)
+--- ap:AP-LAB-01 (atual)
++++ ap:AP-LAB-01 (desejado)
+@@ -0,0 +1,13 @@
++hostname AP-LAB-01
++! modelo AP-FICT-300
++! canal / sinal
++ canal 6
++ sinal 60
++! ssid
++interface LAB-CORP
++ vlan 10
++ ! VLAN 10 CORPORATIVO
++ security wpa2
++ wpa-psk FICTICIO-KEY-0000
++ ! a chave real vem do cofre e nunca do YAML
++ exit
+
+ap:AP-LAB-02: drift manual, 13 adicionada(s), 0 removida(s)
+--- ap:AP-LAB-02 (atual)
++++ ap:AP-LAB-02 (desejado)
+@@ -0,0 +1,13 @@
++hostname AP-LAB-02
++! modelo AP-FICT-300
++! canal / sinal
++ canal 11
++ sinal 40
++! ssid
++interface LAB-VISITANTES
++ vlan 40
++ ! VLAN 40 VISITANTES
++ hidden
++ ! oculta nao e seguranca: o beacon continua anunciando
++ security aberta
++ exit
+
+servidor:SRV-APP-01: drift manual, 21 adicionada(s), 0 removida(s)
+--- servidor:SRV-APP-01 (atual)
++++ servidor:SRV-APP-01 (desejado)
+@@ -0,0 +1,21 @@
++hostname SRV-APP-01
++sistema linux-ficticio
++! grupos
++grupo developers equipe de desenvolvimento
++grupo readonly leitura de logs e metricas
++grupo deploy publica artefatos no servidor
++! usuarios
++usuario ana shell /bin/bash
++ grupos developers, deploy
++  comentario Ana DEV ficticia
++usuario bruno shell /bin/sh
++ grupos readonly
++  comentario Bruno OPS ficticio
++usuario carla shell /bin/sh
++ grupos developers
++  comentario Carla DEV ficticia
++! permissoes
++permisao /srv/app grupo developers modo 0750 tipo diretorio
++permisao /srv/app/releases grupo deploy modo 0755 tipo diretorio
++permisao /var/log/app grupo readonly modo 0750 tipo diretorio
++permisao /srv/app/config grupo readonly modo 0440 tipo arquivo
+
+servidor:SRV-BANCO-01: drift manual, 15 adicionada(s), 0 removida(s)
+--- servidor:SRV-BANCO-01 (atual)
++++ servidor:SRV-BANCO-01 (desejado)
+@@ -0,0 +1,15 @@
++hostname SRV-BANCO-01
++sistema linux-ficticio
++! grupos
++grupo app conta de servico das aplicacoes
++grupo backup conta do agente de backup
++! usuarios
++usuario svcapp shell /usr/sbin/nologin
++ grupos app
++  comentario conta de servico, sem login
++usuario svcbackup shell /usr/sbin/nologin
++ grupos backup
++  comentario conta de backup, sem login
++! permissoes
++permisao /var/lib/banco grupo app modo 0750 tipo diretorio
++permisao /backup grupo backup modo 0700 tipo diretorio
+
+RESUMO: 7 equipamento(s) com diferenca: 7 drift manual
+
+
+========================================================================
+2) PLANO DEPOIS DE GERAR - o criterio de aceite
+========================================================================
+
+O mesmo plano, depois de rodar `gerar` duas vezes sem mudar nada
+no YAML. E aqui que a idempotencia aparece: a segunda geracao
+produz arquivo identico e o plano sai limpo.
+
+[codigo de saida: 0]
+modo: dry-run (nada e escrito em equipamento nenhum)
+equipamentos: 7
+data de referencia: 2026-01-15 14:00
+
+DIFFS:
+
+switch:SW-LAB-01: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+switch:SW-LAB-02: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+firewall:FW-LAB-01: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+ap:AP-LAB-01: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+ap:AP-LAB-02: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+servidor:SRV-APP-01: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+servidor:SRV-BANCO-01: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+RESUMO: sem mudancas
+
+
+========================================================================
+3) DRIFT MANUAL - alguem editou o arquivo gerado
+========================================================================
+
+Uma linha do arquivo gerado foi alterada fora do processo, como
+acontece quando alguem entra no equipamento e mexe direto. O plano
+distingue isso da mudanca gerenciada, e a distincao muda a resposta
+do time: uma e trabalho scheduled, a outra e incidente.
+
+[codigo de saida: 1]
+modo: dry-run (nada e escrito em equipamento nenhum)
+equipamentos: 7
+data de referencia: 2026-01-15 14:00
+
+DIFFS:
+
+switch:SW-LAB-01: drift manual, 1 adicionada(s), 1 removida(s)
+--- switch:SW-LAB-01 (atual)
++++ switch:SW-LAB-01 (desejado)
+@@ -1,4 +1,4 @@
+-hostname SW-LAB-EDITADO-NO-MOMENTO
++hostname SW-LAB-01
+ ! modelo CAT-2960X-FICT
+ interface Vlan30
+  description 30
+
+switch:SW-LAB-02: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+firewall:FW-LAB-01: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+ap:AP-LAB-01: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+ap:AP-LAB-02: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+servidor:SRV-APP-01: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+servidor:SRV-BANCO-01: sem mudanca, 0 adicionada(s), 0 removida(s)
+
+RESUMO: 1 equipamento(s) com diferenca: 1 drift manual
+
+
+========================================================================
+O QUE ESTE EXEMPLO NAO MOSTRA
+========================================================================
+
+- O projeto nao aplica mudanca em equipamento nenhum. Nao existe
+  comando que aplique: `plano` mostra e `gerar` escreve arquivo local,
+  e nada mais.
+- O YAML deste laboratorio e ficticio. As faixas sao RFC 1918 e nao ha
+  nenhum equipamento real por tras.
+- O plano nao valida conectividade, nao testa rota e nao fala com
+  nenhum host. Ele compara texto.

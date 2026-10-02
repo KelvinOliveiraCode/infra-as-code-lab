@@ -1,0 +1,78 @@
+# Servidores desejados do laboratorio ficticio.
+#
+# usuarios, grupos e permissoes sao declarados aqui. Nao existe senha neste
+# arquivo, nem em nenhum outro do repositorio: a senha de um usuario de IaC e
+# sempre resultado, nunca entrada. Quem precisa da senha real a busca no
+# cofre, no momento de entregar, e nao no git.
+
+servidor: LAB-SRV-01
+sistema: linux-ficticio
+
+servidores:
+  - tipo: servidor
+    hostname: SRV-APP-01
+    sistema: linux-ficticio
+    grupos:
+      - nome: developers
+        descricao: equipe de desenvolvimento
+      - nome: readonly
+        descricao: leitura de logs e metricas
+      - nome: deploy
+        descricao: publica artefatos no servidor
+    usuarios:
+      - nome: ana
+        grupos: ['developers', 'deploy']
+        shell: /bin/bash
+        comentario: Ana DEV ficticia
+      - nome: bruno
+        grupos: ['readonly']
+        shell: /bin/sh
+        comentario: Bruno OPS ficticio
+      - nome: carla
+        grupos: ['developers']
+        shell: /bin/sh
+        comentario: Carla DEV ficticia
+    permissoes:
+      - caminho: /srv/app
+        grupo: developers
+        modo: '0750'
+        tipo: diretorio
+      - caminho: /srv/app/releases
+        grupo: deploy
+        modo: '0755'
+        tipo: diretorio
+      - caminho: /var/log/app
+        grupo: readonly
+        modo: '0750'
+        tipo: diretorio
+      - caminho: /srv/app/config
+        grupo: readonly
+        modo: '0440'
+        tipo: arquivo
+
+  - tipo: servidor
+    hostname: SRV-BANCO-01
+    sistema: linux-ficticio
+    grupos:
+      - nome: app
+        descricao: conta de servico das aplicacoes
+      - nome: backup
+        descricao: conta do agente de backup
+    usuarios:
+      - nome: svcapp
+        grupos: ['app']
+        shell: /usr/sbin/nologin
+        comentario: conta de servico, sem login
+      - nome: svcbackup
+        grupos: ['backup']
+        shell: /usr/sbin/nologin
+        comentario: conta de backup, sem login
+    permissoes:
+      - caminho: /var/lib/banco
+        grupo: app
+        modo: '0750'
+        tipo: diretorio
+      - caminho: /backup
+        grupo: backup
+        modo: '0700'
+        tipo: diretorio

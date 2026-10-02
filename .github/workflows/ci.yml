@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    # O projeto foi escrito e testado no Windows. Rodar a suite no mesmo SO
+    # evita que um pressuposto de plataforma passe aqui e quebre no Linux, e
+    # evita a oposta: um teste que so passa no Windows e falha no CI
+    # Linux seria um teste que nao testa o que o README promete.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Conferir encoding dos arquivos de texto
+        # Neste host ja surgiram ideogramas CJK acidentais em arquivo escrito
+        # com acento. Nao e erro de logica: e corrupcao de encoding, que muda
+        # o conteudo e passa despercebida. Falhar aqui e mais barato.
+        run: python tools/verificar_encoding.py
+
+      - name: Verificar que o pacote importa
+        run: python -c "import iaclab; print(iaclab.__version__)"
+
+      - name: O schema aceita os YAMLs do projeto
+        # Um campo usado no YAML e fora do schema e o modo de falha mais
+        # silencioso que existe: o gerador ignora o campo e o equipamento
+        # sai sem ele. A suite tem um teste para isso, e este passo e a
+        # versao rapida, antes de gastar minutos com a suite inteira.
+        run: python -m iaclab plano --infra infra/rede.yaml --infra infra/servidores.yaml --infra infra/acessos.yaml
+
+      - name: Os campos aceitos por tipo estao documentados
+        run: python -m iaclab regras
+
+      - name: Rodar testes com cobertura
+        # fail_under=70 esta no pyproject.toml; cobertura abaixo derruba o build.
+        run: python -m pytest --cov=iaclab --cov-report=term-missing --cov-report=xml
+
+      - name: Conferir cobertura minima
+        run: python -m coverage report --fail-under=70
+
+      - name: Prova de aceite
+        # O criterio de aceite do projeto: o dry-run mostra o diff completo
+        # sem escrever nada, e rodar duas vezes seguidas produz "sem
+        # mudancas". A suite prova que cada funcao funciona; isto prova que a
+        # ferramenta inteira se comporta como o README promete - inclusive a
+        # garantia de que o dry-run nao escreve, que nao se verifica funcao por
+        # funcao.
+        run: python tools/verificar_aceite.py
+
+      - name: O exemplo do plano esta atualizado
+        # O exemplo vai para o repositorio para ser lido sem instalar nada.
+        # Se o codigo mudar e o arquivo nao acompanhar, ele passa a descrever
+        # um comportamento que nao existe mais.
+        run: |
+          python tools/gerar_exemplo.py
+          git diff --exit-code -- exemplos/plano-execucao.txt

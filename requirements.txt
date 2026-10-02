@@ -1,0 +1,12 @@
+# Dependencias de execucao.
+#
+# PyYAML e a unica dependencia externa, e e usada apenas para ler o YAML
+# declarativo. O resto e biblioteca padrao: difflib faz o diff, re e f-string
+# fazem a geracao, e nao existe nenhuma biblioteca de SSH, de SNMP ou de SDK
+# de equipamento - porque este projeto nao fala com equipamento nenhum.
+
+PyYAML>=6.0
+
+# Dependencias de desenvolvimento.
+pytest>=7.4
+pytest-cov>=4.1

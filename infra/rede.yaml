@@ -1,0 +1,160 @@
+# Rede desejada do laboratorio ficticio.
+#
+# Este arquivo e a fonte da verdade da parte de rede. O equipamento nao guarda
+# configuracao: ele recebe o que este arquivo diz. Trocar uma VLAN aqui e a
+# unica forma de mudar a VLAN no switch.
+#
+# Enderecos, equipamentos e dominios sao ficticios (RFC 1918 e .invalid,
+# reservado por norma para nunca resolver).
+
+rede: LAB-CORPORATIVA
+
+vlans:
+  - id: 10
+    nome: CORPORATIVO
+    faixa: 192.168.10.0/24
+    gateway: 192.168.10.1
+    descricao: estacoes e notebooks da empresa
+
+  - id: 20
+    nome: SERVIDORES
+    faixa: 192.168.20.0/24
+    gateway: 192.168.20.1
+    descricao: servidores de aplicacao e banco
+
+  - id: 30
+    nome: GESTAO
+    faixa: 192.168.30.0/24
+    gateway: 192.168.30.1
+    descricao: interfaces de gerenciamento dos equipamentos
+
+  - id: 40
+    nome: VISITANTES
+    faixa: 192.168.40.0/24
+    gateway: 192.168.40.1
+    descricao: rede isolada para visitantes e IoT
+
+equipamentos:
+  # ---------------------------------------------------------------- switch
+  - tipo: switch
+    hostname: SW-LAB-01
+    modelo: CAT-2960X-FICT
+    vlan: 30
+    semente: 1
+    portas:
+      - nome: Gi0/1
+        modo: access
+        vlan: 10
+        descricao: estacao da recepcao
+      - nome: Gi0/2
+        modo: access
+        vlan: 10
+        descricao: estacao da recepcao
+      - nome: Gi0/3
+        modo: trunk
+        vlan: 30
+        descricao: uplink para o FW-LAB-01
+        trunks: ['10', '20', '30']
+      - nome: Gi0/4
+        modo: access
+        vlan: 40
+        descricao: ponto de acesso do visitante
+    stp:
+      modo: rapid-pvst
+      prioridade_bridge: 32768
+      portfast: ['Gi0/1', 'Gi0/2', 'Gi0/4']
+      bpdu_guard: ['Gi0/1', 'Gi0/2', 'Gi0/4']
+
+  - tipo: switch
+    hostname: SW-LAB-02
+    modelo: CAT-2960X-FICT
+    vlan: 30
+    semente: 2
+    portas:
+      - nome: Gi0/1
+        modo: access
+        vlan: 20
+        descricao: rack de servidores
+      - nome: Gi0/2
+        modo: access
+        vlan: 20
+        descricao: rack de servidores
+      - nome: Gi0/3
+        modo: trunk
+        vlan: 30
+        descricao: uplink para o SW-LAB-01
+        trunks: ['10', '20', '30']
+    stp:
+      modo: rapid-pvst
+      prioridade_bridge: 36864
+      portfast: ['Gi0/1', 'Gi0/2']
+      bpdu_guard: ['Gi0/1', 'Gi0/2']
+
+  # -------------------------------------------------------------- firewall
+  - tipo: firewall
+    hostname: FW-LAB-01
+    modelo: PF-FICT-200
+    vlan: 30
+    zonas:
+      - nome: TRUST
+        interfaces: ['Gi0/1']
+        vlan: 10
+      - nome: SERVIDORES
+        interfaces: ['Gi0/2']
+        vlan: 20
+      - nome: UNTRUST
+        interfaces: ['Gi0/3']
+        vlan: 40
+      - nome: GESTAO
+        interfaces: ['Gi0/4']
+        vlan: 30
+    regras:
+      - origem: GESTAO
+        destino: SERVIDORES
+        acao: permitir
+        porta: 443
+        descricao: administracao https dos servidores
+      - origem: TRUST
+        destino: SERVIDORES
+        acao: permitir
+        porta: 5432
+        descricao: acesso ao banco pelas aplicacoes
+      - origem: UNTRUST
+        destino: TRUST
+        acao: negar
+        porta: 0
+        descricao: visitantes nao talkam com estacoes
+    nat:
+      - nome: SAIDA-VISITANTES
+        tipo: dinamica
+        zona_origem: UNTRUST
+        interface_destino: Gi0/3
+        descricao: saida dos visitantes para a internet ficticia
+
+  # --------------------------------------------------------------------- ap
+  - tipo: ap
+    hostname: AP-LAB-01
+    modelo: AP-FICT-300
+    vlan: 30
+    ssid:
+      - nome: LAB-CORP
+        vlan: 10
+        seguranca: wpa2
+        oculta: false
+        canal: 6
+    canal: 6
+    sinal: 60
+
+  - tipo: ap
+    hostname: AP-LAB-02
+    modelo: AP-FICT-300
+    vlan: 30
+    ssid:
+      - nome: LAB-VISITANTES
+        vlan: 40
+        seguranca: aberta
+        oculta: true
+        canal: 11
+    canal: 11
+    sinal: 40
+
