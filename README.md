@@ -68,8 +68,8 @@ switch:SW-LAB-01: drift manual, 39 adicionada(s), 0 removida(s)
 +interface Vlan30
 + description 30
 + exit
-! portas
-interface Gi0/1
++! portas
++interface Gi0/1
 ...
 
 firewall:FW-LAB-01: drift manual, 33 adicionada(s), 0 removida(s)
