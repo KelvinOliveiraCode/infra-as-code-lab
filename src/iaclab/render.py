@@ -244,7 +244,9 @@ def ler_normalizado(diretorio: str | Path, nome: str) -> str | None:
     caminho = Path(diretorio) / SUBDIR / f"{nome}{EXT_NORMALIZADO}"
     if not caminho.exists():
         return None
-    bruto = caminho.read_text(encoding="utf-8", newline="")
+    # `Path.read_text(newline=...)` so existe no Python 3.13+. Ler em binario e
+    # decodificar aqui funciona igual em 3.10, 3.11 e 3.14, e o CI roda 3.11.
+    bruto = caminho.read_bytes().decode("utf-8")
     return bruto.replace("\r\n", "\n").replace("\r", "\n")
 
 
