@@ -1,4 +1,16 @@
-# iaclab
+<div align="center">
+
+<p>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/tests-121%20passing-brightgreen?style=flat-square" alt="Tests">
+  <img src="https://img.shields.io/badge/coverage-88%25-brightgreen?style=flat-square" alt="Coverage">
+  <img src="https://img.shields.io/badge/license-MIT-yellow?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/platform-Windows-blue?style=flat-square" alt="Windows">
+</p>
+
+</div>
+
+# infra-as-code-lab
 
 Infraestrutura de rede e servidores declarada em YAML, gerada em arquivos de
 configuração, com o plano mostrando o diff antes de qualquer escrita.
