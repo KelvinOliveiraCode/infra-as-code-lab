@@ -51,6 +51,9 @@ jobs:
             exit 1
           }
           Write-Host "ok: os tres YAMLs foram lidos"
+          # O runner fecha o passo com `exit $LASTEXITCODE`; sem este exit 0 o
+          # codigo 1 esperado do plano vira codigo do passo e o CI fica vermelho.
+          exit 0
 
       - name: Os campos aceitos por tipo estao documentados
         run: python -m iaclab regras
