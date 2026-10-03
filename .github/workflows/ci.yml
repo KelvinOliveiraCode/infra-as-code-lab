@@ -40,7 +40,17 @@ jobs:
         # silencioso que existe: o gerador ignora o campo e o equipamento
         # sai sem ele. A suite tem um teste para isso, e este passo e a
         # versao rapida, antes de gastar minutos com a suite inteira.
-        run: python -m iaclab plano --infra infra/rede.yaml --infra infra/servidores.yaml --infra infra/acessos.yaml
+        # `plano` devolve 1 quando ha diff a aplicar, e isso e o resultado
+        # esperado aqui - por isso o `$PSNativeCommandUseErrorActionPreference`
+        # desligado e o aceitavel ate 1.
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $false
+          python -m iaclab plano --infra infra/rede.yaml --infra infra/servidores.yaml --infra infra/acessos.yaml
+          if ($LASTEXITCODE -gt 1) {
+            Write-Error "plano devolveu $LASTEXITCODE; esperado 0 (sem diff) ou 1 (com diff)"
+            exit 1
+          }
+          Write-Host "ok: os tres YAMLs foram lidos"
 
       - name: Os campos aceitos por tipo estao documentados
         run: python -m iaclab regras
