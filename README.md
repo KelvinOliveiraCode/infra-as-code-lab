@@ -1,118 +1,112 @@
 # infra-as-code-lab
 
-<div align="center">
-
 [English](README.en.md) · **Português (Brasil)**
 
-</div>
-
-[![Python 3](https://img.shields.io/badge/Python-3.x-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/) [![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=flat-square&logo=scikit-learn)](https://scikit-learn.org/) [![pandas](https://img.shields.io/badge/pandas-150458?style=flat-square&logo=pandas)](https://pandas.pydata.org/) [![pytest](https://img.shields.io/badge/pytest-0A9EDC?style=flat-square&logo=pytest)](https://docs.pytest.org/) [![MIT License](https://img.shields.io/badge/License-MIT-f4c430?style=flat-square)](LICENSE)
-
-### Laboratorio de IaC: plano, diff e idempotencia de tres estados para infraestrutura
-
----
+[![Python 3](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](#) [![PyYAML](https://img.shields.io/badge/PyYAML-%C3%BAnica%20dep-3776AB?style=flat-square)](#) [![pytest](https://img.shields.io/badge/pytest-121%20testes-0A9EDC?style=flat-square&logo=pytest)](#) [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?style=flat-square&logo=githubactions)](#.github/workflows/ci.yml) [![MIT License](https://img.shields.io/badge/License-MIT-f4c430?style=flat-square)](LICENSE)
 
 ## O que é
 
-Laboratorio de IaC: plano, diff e idempotencia de tres estados para infraestrutura
+**Laboratório de Infraestrutura como Código (IaC)** que lê infraestrutura declarada em YAML (servidores, equipamentos de rede, acessos, firewall) e gera **planos e diffs determinísticos** de forma **idempotente** — inspirado no `plan`/`dry-run` do Terraform. Não aplica nada em equipamento real (é só simulação/geração de arquivos). É um laboratório educacional de IaC e idempotência.
 
----
+## Status
 
-## Início Rápido
+Laboratório educacional de IaC, funcional e testado (121 testes).
 
-```bash
-# Clone e entre
-git clone https://github.com/KelvinOliveiraCode/<repo>.git
-cd <repo>
+## Funcionalidades
 
-# Instale dependências
-# Nenhum requirements.txt detectado
+- **Modelo declarativo**: infraestrutura em YAML (`infra/servidores.yaml`, `rede.yaml`, `acessos.yaml`) com chaves normalizadas e validadas (`cargador.py`).
+- **`plano`** (padrão): mostra o **diff** do que mudaria, sem escrever nada — por princípio `--dry-run`.
+- **`gerar`**: escreve os arquivos gerados em disco (com opção de não escrever).
+- **`regras`**: mostra regras/estados aplicados.
+- **Idempotência**: mesmas entradas → mesmo plano; diff estável (data fixa para não quebrar o diff).
+- **Geradores por tipo**: `servidor`, `switch`, `firewall`, além de `ap` e `base`.
 
-# Execute o projeto
-python main.py
+## Arquitetura
 
-# Execute os testes
-pytest
+Pacote `iaclab`: `cargador` (parse/validação de YAML), `modelo` (dados), `diff`/`plano` (comparação de estado), `geradores/*` (produzem saída), `render` e `cli`. Três estados base (desejado/atual/saída) garantem a idempotência.
+
+```mermaid
+flowchart LR
+    YAML[infra/*.yaml] --> C[cargador - valida]
+    C --> M[modelo]
+    M --> P[plano - diff dry-run]
+    M --> G[geradores: servidor, switch, firewall]
+    P --> REG[regras]
+    G --> OUT[arq gerados no disco]
 ```
 
-## Como funciona
+## Stack
 
-Estrutura limpa e modular com separação de responsabilidades.
+- Python ≥ 3.10
+- PyYAML ≥ 6.0 (única dependência)
+- pytest (dev)
+- CI: GitHub Actions (windows-latest, Python 3.11)
 
----
+## Estrutura do repositório
 
-## Capacidades
+```
+infra-as-code-lab/
+├── pyproject.toml · requirements.txt
+├── infra/
+│   ├── servidores.yaml · rede.yaml · acessos.yaml
+├── src/iaclab/
+│   ├── cargador.py · modelo.py · diff.py · plano.py · render.py · cli.py
+│   └── geradores/     # ap, base, firewall, servidor, switch
+├── docs/              # modelo declarativo, por que dry-run importa
+├── exemplos/          # plano de execução
+├── tests/             # 121 testes
+└── LICENSE            # MIT
+```
 
-| Capacidade | Descrição |
-|------------|-------------|
-| Carregamento de Dados | Auto-download do TensorFlow creditcard.csv (284k transações) com cache local |
-| EDA e Visualização | Distribuição de classes, histogramas de Amount, heatmaps de correlação (matplotlib/seaborn) |
-| Pré-processamento | RobustScaler em Amount/Time, split estratificado, remoção de duplicatas |
-| Balanceamento | SMOTE oversampling (fallback: class_weight="balanced") |
-| Modelagem | LogisticRegression, RandomForest, ExtraTrees com RandomizedSearchCV (StratifiedKFold) |
-| Métricas | Accuracy, Precision, Recall, F1, ROC AUC, Specificity, Confusion Matrix |
-| Seleção | Score ponderado: Recall 40% + F1 30% + Precision 20% + Accuracy 10% |
-| Persistência | Serialização joblib para modelo, scaler e resultados completos |
+## Pré-requisitos e instalação
 
+Python ≥ 3.10.
 
----
+```bash
+pip install -e .
+```
 
+## Como executar
 
+```bash
+# mostra o diff do que mudaria, sem escrever nada (dry-run por padrão)
+iaclab plano --infra infra/servidores.yaml --infra infra/rede.yaml --infra infra/acessos.yaml
 
----
+# gera os arquivos em disco
+iaclab gerar --infra infra/servidores.yaml --infra infra/rede.yaml --saida saida
 
-## Perguntas Frequentes
+# mostra as regras/estados
+iaclab regras
+```
 
-<details>
-<summary><strong>O que é este projeto?</strong></summary>
+## Testes e qualidade
 
-Um estudo/projeto em Python demonstrando conceitos fundamentais.
+Comando real (verificado pelo agente):
 
-</details>
+```bash
+python -m pytest tests/
+# 121 passed
+```
 
-<details>
-<summary><strong>Como executar?</strong></summary>
+- CI: `ci.yml` (windows-latest, Python 3.11) roda verificação de encoding, importa o pacote e executa pytest.
 
-Veja [Início Rápido](#início-rápido) para comandos copiáveis.
+## Decisões técnicas e trade-offs
 
-</details>
+- **`plano`/`dry-run` como padrão**: nada é escrito sem decisão explícita, espelhando o `plan` do Terraform; o custo é um passo a mais para aplicar.
+- **YAML declarativo com validação de chaves**: erro cedo em arquivos fora do contrato.
+- **Data fixa na saída**: mantém o diff determinístico e comparável entre execuções.
 
-<details>
-<summary><strong>Há testes?</strong></summary>
+## Limitações conhecidas e roadmap
 
-Nenhum teste automatizado neste repositório.
+- Não aplica em equipamentos reais (apenas simula/gera arquivos).
+- O modelo cobre os tipos de gerador presentes (servidor, switch, firewall, ap); outros exigem novos geradores.
 
-</details>
+## Processo de desenvolvimento
 
-<details>
-<summary><strong>Posso usar em produção?</strong></summary>
+Projeto individual de Kelvin Oliveira, construído com agentes de IA orquestrados e revisado pelo autor. O modelo declarativo, a idempotência e a revisão são do autor.
 
-Este é um **projeto de estudo/portfólio**. Revise e endureça (auth, persistência, monitoramento, etc.) antes de usar em produção.
+## Licença e autor
 
-</details>
+MIT — Copyright (c) 2026 Kelvin Rebelo de Oliveira.
 
-
-
----
-
-## Documentação
-
-- **Código-Fonte** ,  Navegue pelo diretório `src/` para detalhes de implementação
-- **Referência da API** ,  Docstrings inline + type hints
-- **Diagrama de Arquitetura** ,  Veja [architecture.mermaid](docs/architecture.mermaid) (se presente)
-- **Changelog** ,  [CHANGELOG.md](CHANGELOG.md) (se presente)
-- **Contribuindo** ,  [CONTRIBUTING.md](CONTRIBUTING.md) (se presente)
-
-## Licença
-
-[MIT](LICENSE) ,  Kelvin Oliveira
-
----
-
-<div align="center">
-
-**Construído com** · Python 3 + scikit-learn + pandas
-
-**Autor** · [Kelvin Oliveira](https://github.com/KelvinOliveiraCode) · [Portfolio](https://kelvinoliveiracode.github.io/portfolio/)
-
-</div>
+**Autor**: [Kelvin Oliveira](https://github.com/KelvinOliveiraCode) · [Portfólio](https://kelvinoliveiracode.github.io/portfolio/)
