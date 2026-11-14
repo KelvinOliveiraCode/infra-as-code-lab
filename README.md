@@ -6,7 +6,7 @@
 
 ## O que é
 
-**Laboratório de Infraestrutura como Código (IaC)** que lê infraestrutura declarada em YAML (servidores, equipamentos de rede, acessos, firewall) e gera **planos e diffs determinísticos** de forma **idempotente** — inspirado no `plan`/`dry-run` do Terraform. Não aplica nada em equipamento real (é só simulação/geração de arquivos). É um laboratório educacional de IaC e idempotência.
+**Laboratório de Infraestrutura como Código (IaC)** que lê infraestrutura declarada em YAML (servidores, equipamentos de rede, acessos, firewall) e gera **planos e diffs determinísticos** de forma **idempotente**, inspirado no `plan`/`dry-run` do Terraform. Não aplica nada em equipamento real (é só simulação/geração de arquivos). É um laboratório educacional de IaC e idempotência.
 
 ## Status
 
@@ -14,12 +14,12 @@ Laboratório educacional de IaC, funcional e testado (121 testes).
 
 ## Funcionalidades
 
-- **Modelo declarativo**: infraestrutura em YAML (`infra/servidores.yaml`, `rede.yaml`, `acessos.yaml`) com chaves normalizadas e validadas (`cargador.py`).
-- **`plano`** (padrão): mostra o **diff** do que mudaria, sem escrever nada — por princípio `--dry-run`.
-- **`gerar`**: escreve os arquivos gerados em disco (com opção de não escrever).
-- **`regras`**: mostra regras/estados aplicados.
-- **Idempotência**: mesmas entradas → mesmo plano; diff estável (data fixa para não quebrar o diff).
-- **Geradores por tipo**: `servidor`, `switch`, `firewall`, além de `ap` e `base`.
+- Modelo declarativo: infraestrutura em YAML (`infra/servidores.yaml`, `rede.yaml`, `acessos.yaml`) com chaves normalizadas e validadas (`cargador.py`).
+- **`plano`** (padrão): mostra o **diff** do que mudaria, sem escrever nada, por princípio `--dry-run`.
+- `gerar`: escreve os arquivos gerados em disco (com opção de não escrever).
+- `regras`: mostra regras/estados aplicados.
+- Idempotência: mesmas entradas → mesmo plano; diff estável (data fixa para não quebrar o diff).
+- Geradores por tipo: `servidor`, `switch`, `firewall`, além de `ap` e `base`.
 
 ## Arquitetura
 
@@ -44,7 +44,7 @@ flowchart LR
 
 ## Estrutura do repositório
 
-```
+```text
 infra-as-code-lab/
 ├── pyproject.toml · requirements.txt
 ├── infra/
@@ -92,9 +92,9 @@ python -m pytest tests/
 
 ## Decisões técnicas e trade-offs
 
-- **`plano`/`dry-run` como padrão**: nada é escrito sem decisão explícita, espelhando o `plan` do Terraform; o custo é um passo a mais para aplicar.
-- **YAML declarativo com validação de chaves**: erro cedo em arquivos fora do contrato.
-- **Data fixa na saída**: mantém o diff determinístico e comparável entre execuções.
+- `plano`/`dry-run` como padrão: nada é escrito sem decisão explícita, espelhando o `plan` do Terraform; o custo é um passo a mais para aplicar.
+- YAML declarativo com validação de chaves: erro cedo em arquivos fora do contrato.
+- Data fixa na saída: mantém o diff determinístico e comparável entre execuções.
 
 ## Limitações conhecidas e roadmap
 
@@ -107,6 +107,6 @@ Projeto individual de Kelvin Oliveira, construído com agentes de IA orquestrado
 
 ## Licença e autor
 
-MIT — Copyright (c) 2026 Kelvin Rebelo de Oliveira.
+MIT. Copyright (c) 2026 Kelvin Rebelo de Oliveira.
 
 **Autor**: [Kelvin Oliveira](https://github.com/KelvinOliveiraCode) · [Portfólio](https://kelvinoliveiracode.github.io/portfolio/)
