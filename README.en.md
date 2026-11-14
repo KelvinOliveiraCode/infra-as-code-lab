@@ -1,118 +1,113 @@
 # infra-as-code-lab
 
-<div align="center">
-
 **English** · [Português (Brasil)](README.md)
 
-</div>
-
-[![Python 3](https://img.shields.io/badge/Python-3.x-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/) [![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=flat-square&logo=scikit-learn)](https://scikit-learn.org/) [![pandas](https://img.shields.io/badge/pandas-150458?style=flat-square&logo=pandas)](https://pandas.pydata.org/) [![pytest](https://img.shields.io/badge/pytest-0A9EDC?style=flat-square&logo=pytest)](https://docs.pytest.org/) [![MIT License](https://img.shields.io/badge/License-MIT-f4c430?style=flat-square)](LICENSE)
-
-### Laboratorio de IaC: plano, diff e idempotencia de tres estados para infraestrutura
-
----
+[![Python 3](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](#) [![PyYAML](https://img.shields.io/badge/PyYAML-only%20dep-3776AB?style=flat-square)](#) [![pytest](https://img.shields.io/badge/pytest-121%20tests-0A9EDC?style=flat-square&logo=pytest)](#) [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?style=flat-square&logo=githubactions)](#.github/workflows/ci.yml) [![MIT License](https://img.shields.io/badge/License-MIT-f4c430?style=flat-square)](LICENSE)
 
 ## What it is
 
-Laboratorio de IaC: plano, diff e idempotencia de tres estados para infraestrutura
+An **Infrastructure as Code (IaC)** lab that reads declarative infrastructure in YAML (servers, network devices, access, firewall) and produces **deterministic plans and diffs** in an **idempotent** way — inspired by Terraform's `plan`/`dry-run`. It does not apply anything to real equipment (simulation/file generation only). It is an educational IaC/idempotency lab.
 
----
+## Status
 
-## Quick Start
+An educational IaC lab, working and tested (121 tests).
 
-```bash
-# Clone and enter
-git clone https://github.com/KelvinOliveiraCode/<repo>.git
-cd <repo>
+## Features
 
-# Install dependencies
-# No requirements.txt detected
+- **Declarative model**: infrastructure in YAML (`infra/servidores.yaml`, `rede.yaml`, `acessos.yaml`) with normalized and validated keys (`cargador.py`).
+- **`plano`** (default): shows the **diff** of what would change, writing nothing — `--dry-run` by principle.
+- **`gerar`**: writes the generated files to disk (with an option not to write).
+- **`regras`**: shows the applied rules/states.
+- **Idempotency**: same inputs → same plan; stable diff (fixed date so the diff does not break).
+- **Per-type generators**: `servidor`, `switch`, `firewall`, plus `ap` and `base`.
 
-# Run the project
-python main.py
+## Architecture
 
-# Run tests
-pytest
+An `iaclab` package: `cargador` (YAML parse/validation), `modelo` (data), `diff`/`plano` (state comparison), `geradores/*` (produce output), `render` and `cli`. Three base states (desired/current/output) ensure idempotency.
+
+```mermaid
+flowchart LR
+    YAML[infra/*.yaml] --> C[cargador - validate]
+    C --> M[modelo]
+    M --> P[plano - dry-run diff]
+    M --> G[generators: server, switch, firewall]
+    P --> REG[regras]
+    G --> OUT[files written to disk]
 ```
 
-## How it works
+## Stack
 
-Estrutura limpa e modular com separação de responsabilidades.
+- Python ≥ 3.10
+- PyYAML ≥ 6.0 (only dependency)
+- pytest (dev)
+- CI: GitHub Actions (windows-latest, Python 3.11)
 
----
+## Repository layout
 
-## Capabilities
+```
+infra-as-code-lab/
+├── pyproject.toml · requirements.txt
+├── infra/
+│   ├── servidores.yaml · rede.yaml · acessos.yaml
+├── src/iaclab/
+│   ├── cargador.py · modelo.py · diff.py · plano.py
+│   ├── render.py · cli.py
+│   └── geradores/     # ap, base, firewall, servidor, switch
+├── docs/              # declarative model, why dry-run matters
+├── exemplos/          # execution plan
+├── tests/             # 121 tests
+└── LICENSE            # MIT
+```
 
-| Capacidade | Descrição |
-|------------|-------------|
-| Carregamento de Dados | Auto-download do TensorFlow creditcard.csv (284k transações) com cache local |
-| EDA e Visualização | Distribuição de classes, histogramas de Amount, heatmaps de correlação (matplotlib/seaborn) |
-| Pré-processamento | RobustScaler em Amount/Time, split estratificado, remoção de duplicatas |
-| Balanceamento | SMOTE oversampling (fallback: class_weight="balanced") |
-| Modelagem | LogisticRegression, RandomForest, ExtraTrees com RandomizedSearchCV (StratifiedKFold) |
-| Métricas | Accuracy, Precision, Recall, F1, ROC AUC, Specificity, Confusion Matrix |
-| Seleção | Score ponderado: Recall 40% + F1 30% + Precision 20% + Accuracy 10% |
-| Persistência | Serialização joblib para modelo, scaler e resultados completos |
+## Prerequisites and installation
 
+Python ≥ 3.10.
 
----
+```bash
+pip install -e .
+```
 
+## How to run
 
+```bash
+# shows the diff of what would change, writing nothing (dry-run by default)
+iaclab plano --infra infra/servidores.yaml --infra infra/rede.yaml --infra infra/acessos.yaml
 
----
+# generates the files to disk
+iaclab gerar --infra infra/servidores.yaml --infra infra/rede.yaml --saida saida
 
-## FAQ
+# shows the rules/states
+iaclab regras
+```
 
-<details>
-<summary><strong>What is this project?</strong></summary>
+## Tests and quality
 
-A Python study/project demonstrating core concepts.
+Real command (verified by the agent):
 
-</details>
+```bash
+python -m pytest tests/
+# 121 passed
+```
 
-<details>
-<summary><strong>How do I run it?</strong></summary>
+- CI (`ci.yml`, windows-latest, Python 3.11): checks encoding, imports the package, runs the suite.
 
-See [Quick Start](#quick-start) for copy-paste commands.
+## Technical decisions and trade-offs
 
-</details>
+- **`plano`/`dry-run` as the default**: nothing is written without an explicit step, mirroring Terraform's `plan`; the cost is one extra step to apply.
+- **Declarative YAML with key validation**: catches errors early instead of later drift.
+- **Fixed reference date in the output**: keeps the diff deterministic and comparable across runs.
 
-<details>
-<summary><strong>Are there tests?</strong></summary>
+## Known limitations and roadmap
 
-No automated tests in this repository.
+- It does not apply to real equipment (simulation/file generation only).
+- The model covers the present generator types (server, switch, firewall, ap); new ones require new generators.
 
-</details>
+## Development process
 
-<details>
-<summary><strong>Can I use this in production?</strong></summary>
+An individual project by Kelvin Oliveira, built with orchestrated AI agents and reviewed by the author. The declarative model, the idempotency and the review are the author's.
 
-This is a **study/portfolio project**. Review and harden (auth, persistence, monitoring, etc.) before production use.
+## License and author
 
-</details>
+MIT — Copyright (c) 2026 Kelvin Rebelo de Oliveira.
 
-
-
----
-
-## Documentation
-
-- **Source Code** ,  Browse the `src/` directory for implementation details
-- **API Reference** ,  Inline docstrings + type hints
-- **Architecture Diagram** ,  See [architecture.mermaid](docs/architecture.mermaid) (if present)
-- **Changelog** ,  [CHANGELOG.md](CHANGELOG.md) (if present)
-- **Contributing** ,  [CONTRIBUTING.md](CONTRIBUTING.md) (if present)
-
-## License
-
-[MIT](LICENSE) ,  Kelvin Oliveira
-
----
-
-<div align="center">
-
-**Built with** · Python 3 + scikit-learn + pandas
-
-**Author** · [Kelvin Oliveira](https://github.com/KelvinOliveiraCode) · [Portfolio](https://kelvinoliveiracode.github.io/portfolio/)
-
-</div>
+**Author**: [Kelvin Oliveira](https://github.com/KelvinOliveiraCode) · [Portfolio](https://kelvinoliveiracode.github.io/portfolio/)
